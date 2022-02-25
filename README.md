@@ -7,17 +7,12 @@ Highly formattable in-build fields to get data from databases
 exactly the way you want.
 
 
-
-
-## Badges
-
-
-[![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)](https://opensource.org/licenses/)
-
-
 ## Usage/Examples
-
+Here goes the simple and straightforward usage 
+example of this class
 ```php
+<?php
+
 $queryFields = [
     "fields" => [
         [
@@ -51,6 +46,8 @@ $queryFields = [
 ```
 Need to add another index called `joinedTbls` to the params of `$queryFields`
 ```PHP
+<?php
+
 $joinedClause = "";
 $selFields["joiner"] = $selFields["params"]["joiner"];
 if(isset($selFields["joiner"]) && is_array($selFields["joiner"])){
@@ -77,6 +74,8 @@ The values of those indices are the callbacks
 The ajax called intermediate PHP script is the right place
 to put the callback functions
 ```PHP
+<?php
+
 function setEditOption($p){
     // $p the primary key which is only parameter here. Other variables can be obtained with global declarations
 }
@@ -133,3 +132,28 @@ if($('.table').hasClass('load-data')){
 }
 var table = $('.table').DataTable(dtConfig);
 ```
+## Documentation
+
+Full documentation of the DataTables options, 
+API and plug-in interface are available on the 
+[DataTables website]. The site also contains information 
+on the wide variety of plug-ins that are 
+available for DataTables, which can be used to 
+enhance and customise your table even further.
+
+
+[DataTables website]: <https://datatables.net/manual/>
+## Support
+
+Support for DataTables is available through 
+the [DataTables forums](//datatables.net/forums) and 
+[support options](//datatables.net/support) are available.
+
+
+
+## License
+
+[![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat&logo=github)](https://github.com/abhi36/Complex-SSP/blob/main/LICENSE)
+
+
+DataTables is release under the [MIT license](https://datatables.net/license/mit). You are free to use, modify and distribute this software, as long as the copyright header is left intact (specifically the comment block which starts with `/*!`).
