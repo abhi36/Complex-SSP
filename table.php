@@ -33,8 +33,8 @@
         ],
         "params" => [
             "joiner" => [
-                "table2 AS ST" => "ST.referer_key=R.id",
-                "table3 AS CT" => "R.referer_key=CT.id"
+                "table2 AS ST" => ["LEFT", "ST.referer_key=R.id"],
+                "table3 AS CT" => ["INNER", "R.referer_key=CT.id"]
             ],
             "where" => "1",
             "groupBy" => "R.id", // Optional
@@ -45,7 +45,7 @@
     $joinedClause = "";
     $selFields["joiner"] = $selFields["params"]["joiner"];
     if(isset($selFields["joiner"]) && is_array($selFields["joiner"])){
-        $joinedArr = array_map( function($k, $v){ return "LEFT JOIN {$k} ON ({$v})"; }, array_keys($selFields["joiner"]), $selFields["joiner"] );
+        $joinedArr = array_map( function($k, $v){ return "{$v[0]} JOIN {$k} ON ({$v[1]})"; }, array_keys($selFields["joiner"]), $selFields["joiner"] );
         $joinedClause = implode(" ", $joinedArr);
     }
     $selFields["params"]["joinedTbls"] = $joinedClause;

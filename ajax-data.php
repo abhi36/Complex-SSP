@@ -61,8 +61,10 @@
 
     function setEditOption($p){
         global $rawTable, $formAction, $backEnd, $pk, $canEdit, $canDelete;
-        if(isset($p[0]) && intval($p[0])){
+        if(is_array($p) && isset($p[0]) && intval($p[0])){
             $d = intval($p[0]);
+        }else{
+            $d = $p;
         }
         $actionBtn = "";
         if($canEdit !== false){
@@ -73,8 +75,10 @@
 
     function setDeleteOption($p){
         global $rawTable, $formAction, $backEnd, $pk, $canEdit, $canDelete;
-        if(isset($p[0]) && intval($p[0])){
+        if(is_array($p) && isset($p[0]) && intval($p[0])){
             $d = intval($p[0]);
+        }else{
+            $d = $p;
         }
         $actionBtn = "";
         if($canDelete !== false){
