@@ -35,7 +35,7 @@ $queryFields = [
     ]
     "params" => [
         "joiner" => [
-            "table2 AS T2" => "T1.refer_key=T2.primary_key",
+            "table2 AS T2" => ["LEFT", "T1.refer_key=T2.primary_key"],
             .........
         ],
         "where" => "1",
@@ -49,12 +49,12 @@ Need to add another index called `joinedTbls` to the params of `$queryFields`
 <?php
 
 $joinedClause = "";
-$selFields["joiner"] = $selFields["params"]["joiner"];
-if(isset($selFields["joiner"]) && is_array($selFields["joiner"])){
-    $joinedArr = array_map( function($k, $v){ return "LEFT JOIN {$k} ON ({$v})"; }, array_keys($selFields["joiner"]), $selFields["joiner"] );
+$queryFields["joiner"] = $queryFields["params"]["joiner"];
+if(isset($queryFields["joiner"]) && is_array($queryFields["joiner"])){
+    $joinedArr = array_map( function($k, $v){ return "{$v[0]} JOIN {$k} ON ({$v[1]})"; }, array_keys($queryFields["joiner"]), $queryFields["joiner"] );
     $joinedClause = implode(" ", $joinedArr);
 }
-$selFields["params"]["joinedTbls"] = $joinedClause;
+$queryFields["params"]["joinedTbls"] = $joinedClause;
 ```
 #### NOTE: Number of fields have to be equal to the number of columns on the `<table>`
 
@@ -93,8 +93,8 @@ the same page as where the table HTML is placed
 ```javascript
 const dataAttribs = {
     "t": "<?=base64_encode("table AS R") ?>",
-    "fields": "<?=base64_encode(serialize($selFields["fields"])) ?>",
-    "params": "<?=base64_encode(serialize($selFields["params"])) ?>",
+    "fields": "<?=base64_encode(serialize($queryFields["fields"])) ?>",
+    "params": "<?=base64_encode(serialize($queryFields["params"])) ?>",
     "key": "R.id"
 };
 ```
