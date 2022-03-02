@@ -1,20 +1,18 @@
 <?php
 /*
  * Helper functions for building a DataTables server-side processing (SSP) SQL query
- * 
+ *
  * Author: Abhijeet K
  *
  * @license: GNU v3.0
  */
 class SSP {
-
 	private static $filterFields = [];
 	private static $sortFields = [];
 	private static $fetchFields = [];
 	private static $columnFields = [];
 	private static $actionCtrls = "";
 	private static $silentFields = ["silence", "actions"];
-
 	/**
 	 * Create the data output array for the DataTables rows
 	 *
@@ -22,7 +20,7 @@ class SSP {
 	 *  @param  array  $data    	Data from the SQL get
 	 *  @param	string $primaryKey	Primary Key provided by calling script
 	 *  @return array          Formatted data in a row based format
-	 * 
+	 *
 	 * It allowes two types of user defined functions "callback" "formatter"
 	 * the callback function gets precedence
 	 */
@@ -33,13 +31,11 @@ class SSP {
 			$row = array();
 			for ( $j=0, $jen=count($columns)-1 ; $j<$jen ; $j++ ) {
 				$column = $columns[$j];
-
 				$fieldItemNameParts = explode(".", $primaryKey);
 				$pk = trim(end($fieldItemNameParts));
-
 				$rowData = $data[$i];
 				$pkVal = $data[$i][$pk];
-				
+
 				// If there is a callback function declared and defined
 				if( isset( $column["callback"] ) && function_exists($callBackFunc = $column["callback"]) ){
 					$row[ $j ] = call_user_func_array($callBackFunc, [
@@ -49,22 +45,18 @@ class SSP {
 								$pk
 							]);
 				}
-
 				// Skip special case of actions
 				if($column["name"] == "actions"){
 					self::$actionCtrls = "";
-					if(isset($column["options"]) && is_array($column["options"])){						
+					if(isset($column["options"]) && is_array($column["options"])){
 						self::prepareActionCtrls($column["options"], $data[$i][$pk]);
 					}
-
 					$row[ $j ] = self::$actionCtrls;
 				}elseif(!in_array($column["name"], self::$silentFields)){
 					extract($data[$i]);
-					
 
 					// If there a formatter is provided
 					if ( isset( $column['formatter'] ) ) {
-
 						// Construct formatted response with simple string replacement
 						preg_match_all("/{{(\w+)}}/", $column["formatter"], $vars);
 						if(count($vars) === 2){
@@ -81,7 +73,6 @@ class SSP {
 							}
 							$column["formatter"] = str_replace($searches, $replacers, $column["formatter"]);
 						}
-
 						// Construct formatted response with expression replacement
 						preg_match_all("/{\[(.*?)\]}/", $column["formatter"], $vars);
 						if(count($vars) === 2){
@@ -90,7 +81,6 @@ class SSP {
 							if(is_array($searches) && is_array($replacers)){
 								if(count($searches) === count($replacers) && count($searches)){
 									foreach($replacers as $rk=>$rv){
-
 										preg_match_all("/{(\w+)}/", $rv, $dataVars);
 										$dSearches = $dataVars[0];
 										$dReplacers = $dataVars[1];
@@ -98,7 +88,7 @@ class SSP {
 											if(count($dSearches) === count($dReplacers) && count($dSearches)){
 												foreach($dReplacers as $drk=>$drv){
 													$dReplacers[$drk] = (isset($rowData[$drv])) ? "$".$drv : "";
-													
+
 												}
 											}
 										}
@@ -156,7 +146,6 @@ class SSP {
 		}
 		return $limit;
 	}
-
 	/**
 	 * Ordering
 	 *
@@ -171,17 +160,14 @@ class SSP {
 		$order = '';
 		if ( isset($request['order']) && count($request['order']) ) {
 			$orderBy = array();
-
 			for ( $i=0, $ien=count($request['order']) ; $i<$ien ; $i++ ) {
 				// Convert the column index into the column data property
 				$columnIdx = intval($request['order'][$i]['column']);
 				$requestColumn = $request['columns'][$columnIdx];
-
 				$orderFields = $columns[$requestColumn["data"]];
-				self::$sortFields = isset($orderFields["sorter"]) ? $orderFields["sorter"] : 
+				self::$sortFields = isset($orderFields["sorter"]) ? $orderFields["sorter"] :
 									(isset($orderFields["filter"]) ? $orderFields["filter"] :
 									$orderFields["name"]);
-
 				self::$sortFields = (!is_array(self::$sortFields)) ? [self::$sortFields] : self::$sortFields;
 				if ( $requestColumn['orderable'] == 'true' ) {
 					$dir = $request['order'][$i]['dir'] === 'asc' ?
@@ -198,7 +184,6 @@ class SSP {
 		}
 		return $order;
 	}
-
 	/**
 	 * Searching / Filtering
 	 *
@@ -212,38 +197,67 @@ class SSP {
 	 *  @param  array $columns Column information array
 	 *  @return string SQL where clause
 	 */
-	static function filter ( $request, $columns )
+	static function filter ( $request, $columns, &$bindings )
 	{
 		$globalSearch = array();
 		$columnSearch = array();
-		
+
 		if ( isset($request['search']) && $request['search']['value'] != '' ) {
 			$str = $request['search']['value'];
 			for ( $i=0, $ien=count($request['columns']) ; $i<$ien ; $i++ ) {
 				$requestColumn = $request['columns'][$i];
-
 				$filterFields = $columns[$requestColumn["data"]];
 				self::$sortFields = isset($filterFields["filter"]) ? $filterFields["filter"] :
 									$filterFields["name"];
-
 				self::$sortFields = (!is_array(self::$sortFields)) ? [self::$sortFields] : self::$sortFields;
 				if ( $requestColumn['searchable'] == 'true' ) {
 					foreach(self::$sortFields as $filterField){
-						$globalSearch[] = $filterField." LIKE '%{$str}%'";
+						$binding = self::bind( $bindings, "%{$str}%", PDO::PARAM_STR );
+						$globalSearch[] = $filterField." LIKE {$binding}";
 					}
 				}
 			}
 		}
-		
+		// var_dump($globalSearch);exit();
 		return $globalSearch;
+
+		var_dump($globalSearch);
+		// Individual column filtering
+		/*if ( isset( $request['columns'] ) ) {
+			for ( $i=0, $ien=count($request['columns']) ; $i<$ien ; $i++ ) {
+				$requestColumn = $request['columns'][$i];
+				$columnIdx = array_search( $requestColumn['data'], $dtColumns );
+				$column = $columns[ $columnIdx ];
+				$str = $requestColumn['search']['value'];
+				if ( $requestColumn['searchable'] == 'true' &&
+				 $str != '' ) {
+					$binding = self::bind( $bindings, '%'.$str.'%', PDO::PARAM_STR );
+					$columnSearch[] = "`".$column['db']."` LIKE ".$binding;
+				}
+			}
+		}
+		// Combine the filters into a single string
+		$where = '';
+		if ( count( $globalSearch ) ) {
+			$where = '('.implode(' OR ', $globalSearch).')';
+		}
+		if ( count( $columnSearch ) ) {
+			$where = $where === '' ?
+				implode(' AND ', $columnSearch) :
+				$where .' AND '. implode(' AND ', $columnSearch);
+		}
+		if ( $where !== '' ) {
+			$where = 'WHERE '.$where;
+		}*/
+		return $where;
 	}
-	
+
 	/**
 	 * Prepare action controls called from origin
-	 * 
+	 *
 	 * 	@param	array	$options Action items in array
 	 * 	@param	int		Primary key of the current data row
-	 * 
+	 *
 	 * 	@return	null	Makes a call direct to the calling user function
 	 * and append the returned formatted string to private variable $actionCtrls
 	 */
@@ -258,7 +272,6 @@ class SSP {
 			}
 		}
 	}
-
 	private static function setFetchFields($fieldsParts)
 	{
 		if(is_array($fieldsParts)){
@@ -276,7 +289,6 @@ class SSP {
 			}
 		}
 	}
-
 	private static function setColumnFields($fieldsParts)
 	{
 		if(is_array($fieldsParts)){
@@ -296,16 +308,13 @@ class SSP {
 			}
 		}
 	}
-
 	static function complex ( $request, $conn, $table = null, $primaryKey = 'id')
 	{
 		if(!isset($request["fields"])){
 			self::fatal("No fields defined to fetch");
 		}
-
 		$bindings = array();
 		$db = self::db( $conn );
-
 		$fieldsParts = unserialize(base64_decode($request['fields']));
 		$params = isset($request["params"]) ? unserialize(base64_decode($request["params"])) : false;
 		$joinedTbls = isset($params["joinedTbls"]) ? $params["joinedTbls"] : false;
@@ -314,7 +323,7 @@ class SSP {
 		if(null === $table){
 			$table = isset($request["table"]) ? $request["table"] : false;
 		}
-		
+
 		if(!$table){
 			self::fatal("No base tables defined");
 		}
@@ -325,34 +334,29 @@ class SSP {
 				if(!isset($fieldItem["name"])) continue; //self::fatal("Each field items need a name index");
 			}
 		}
-
 		self::setFetchFields($fieldsParts);
 		self::$fetchFields[] = $primaryKey;
-		
+
 		if(!empty(self::$silentFields)){
 			foreach(self::$silentFields as $silentField){
-				
+
 			}
 		}
-
 		self::setColumnFields($fieldsParts);
-
 		// Build the SQL query string from the request
 		$limit = self::limit( $request );
 		$order = self::order( $request, $fieldsParts );
-		$whereResult = self::filter( $request, $fieldsParts );
+		$whereResult = self::filter( $request, $fieldsParts, $bindings );
 		$whereResult = self::_flatten( $whereResult, " OR " );
-
 		if ( $whereResult ) {
 			$where = $where ?
 				$where .' AND '.$whereResult :
 				'WHERE '.$whereResult;
 		}
-		
+
 		if( null !== $joinedTbls ){
 			$table .= " {$joinedTbls}";
 		}
-
 		$query = "SELECT ".implode(", ", self::$fetchFields)."
 		FROM {$table}
 		$where
@@ -364,14 +368,15 @@ class SSP {
 			var_dump($query);
 			exit();
 		}
-
 		// Main query to actually get the data
 		$data = self::sql_exec( $db, $bindings, $query);
+
 
 		$query = "SELECT COUNT({$primaryKey})
 		FROM {$table}
 		$where
 		$groupBy";
+
 		$resFilterLength = self::sql_exec( $db, $bindings, $query);
 		$recordsFiltered = (count($resFilterLength) === 1) ? $resFilterLength[0][0] : count($resFilterLength);
 
@@ -381,6 +386,7 @@ class SSP {
 		{$groupBy}";
 		$resTotalLength = self::sql_exec( $db, $bindings, $query);
 		$recordsTotal = (count($resTotalLength) === 1) ? $resTotalLength[0][0] : count($resTotalLength);
+
 		/*
 		 * Output
 		 */
