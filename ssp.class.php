@@ -165,8 +165,10 @@ class SSP {
 				$columnIdx = intval($request['order'][$i]['column']);
 				$requestColumn = $request['columns'][$columnIdx];
 				$orderFields = $columns[$requestColumn["data"]];
-				self::$sortFields = isset($orderFields["sorter"]) ? $orderFields["sorter"] :
-									(isset($orderFields["filter"]) ? $orderFields["filter"] :
+				self::$sortFields = isset($orderFields["sorter"]) && !empty($orderFields["sorter"])
+									? $orderFields["sorter"] :
+									(isset($orderFields["filter"]) && !empty($orderFields["filter"])
+									? $orderFields["filter"] :
 									$orderFields["name"]);
 				self::$sortFields = (!is_array(self::$sortFields)) ? [self::$sortFields] : self::$sortFields;
 				if ( $requestColumn['orderable'] == 'true' ) {
