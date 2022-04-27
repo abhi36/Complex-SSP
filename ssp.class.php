@@ -38,7 +38,7 @@ class SSP {
 
 				// If there is a callback function declared and defined
 				if( isset( $column["callback"] ) && function_exists($callBackFunc = $column["callback"]) ){
-					$row[ $j ] = call_user_func_array($callBackFunc, [
+					$rowData[ self::$columnFields[$j] ]= call_user_func_array($callBackFunc, [
 								$rowData[self::$columnFields[$j]],
 								$j,
 								$rowData,
@@ -182,7 +182,7 @@ class SSP {
 					}
 				}
 			}
-			$order = 'ORDER BY '.implode(', ', $orderBy);
+			$order = (!empty($orderBy)) ? 'ORDER BY '.implode(', ', $orderBy) : '';
 		}
 		return $order;
 	}
