@@ -24,12 +24,11 @@ class SSP {
 	 * It allowes two types of user defined functions "callback" "formatter"
 	 * the callback function gets precedence
 	 */
-	static function data_output ( $columns, $data, $primaryKey )
-	{
+	static function data_output($columns, $data, $primaryKey) {
 		$out = array();
-		for ( $i=0, $ien=count($data) ; $i<$ien ; $i++ ) {
+		for ($i = 0, $ien = count($data); $i < $ien; $i++) {
 			$row = array();
-			for ( $j=0, $jen=count($columns)-1 ; $j<$jen ; $j++ ) {
+			for ($j = 0, $jen = count($columns) - 1; $j < $jen; $j++) {
 				$column = $columns[$j];
 				$fieldItemNameParts = explode(".", $primaryKey);
 				$pk = trim(end($fieldItemNameParts));
@@ -37,37 +36,37 @@ class SSP {
 				$pkVal = $data[$i][$pk];
 
 				// If there is a callback function declared and defined
-				if( isset( $column["callback"] ) && function_exists($callBackFunc = $column["callback"]) ){
-					$rowData[ self::$columnFields[$j] ]= call_user_func_array($callBackFunc, [
-								$rowData[self::$columnFields[$j]],
-								$j,
-								$rowData,
-								$pk
-							]);
+				if (isset($column["callback"]) && function_exists($callBackFunc = $column["callback"])) {
+					$rowData[self::$columnFields[$j]] = call_user_func_array($callBackFunc, [
+						$rowData[self::$columnFields[$j]],
+						$j,
+						$rowData,
+						$pk
+					]);
 				}
 				// Skip special case of actions
-				if($column["name"] == "actions"){
+				if ($column["name"] == "actions") {
 					self::$actionCtrls = "";
-					if(isset($column["options"]) && is_array($column["options"])){
+					if (isset($column["options"]) && is_array($column["options"])) {
 						self::prepareActionCtrls($column["options"], $data[$i][$pk]);
 					}
-					$row[ $j ] = self::$actionCtrls;
-				}elseif(!in_array($column["name"], self::$silentFields)){
+					$row[$j] = self::$actionCtrls;
+				} elseif (!in_array($column["name"], self::$silentFields)) {
 					extract($data[$i]);
 
 					// If there a formatter is provided
-					if ( isset( $column['formatter'] ) ) {
+					if (isset($column['formatter'])) {
 						// Construct formatted response with simple string replacement
 						preg_match_all("/{{(\w+)}}/", $column["formatter"], $vars);
-						if(count($vars) === 2){
+						if (count($vars) === 2) {
 							$searches = $vars[0];
 							$replacers = $vars[1];
-							if(is_array($searches) && is_array($replacers)){
-								if(count($searches) === count($replacers) && count($searches)){
-									foreach($replacers as $rk=>$rv){
+							if (is_array($searches) && is_array($replacers)) {
+								if (count($searches) === count($replacers) && count($searches)) {
+									foreach ($replacers as $rk => $rv) {
 										$replacers[$rk] = (isset($$rv))
-														? (!is_array($$rv) ? $$rv : serialize($$rv))
-														: (isset($_SESSION[$rv]) ? $_SESSION[$rv] : "");
+											? (!is_array($$rv) ? $$rv : serialize($$rv))
+											: (isset($_SESSION[$rv]) ? $_SESSION[$rv] : "");
 									}
 								}
 							}
@@ -75,20 +74,19 @@ class SSP {
 						}
 						// Construct formatted response with expression replacement
 						preg_match_all("/{\[(.*?)\]}/", $column["formatter"], $vars);
-						if(count($vars) === 2){
+						if (count($vars) === 2) {
 							$searches = $vars[0];
 							$replacers = $vars[1];
-							if(is_array($searches) && is_array($replacers)){
-								if(count($searches) === count($replacers) && count($searches)){
-									foreach($replacers as $rk=>$rv){
+							if (is_array($searches) && is_array($replacers)) {
+								if (count($searches) === count($replacers) && count($searches)) {
+									foreach ($replacers as $rk => $rv) {
 										preg_match_all("/{(\w+)}/", $rv, $dataVars);
 										$dSearches = $dataVars[0];
 										$dReplacers = $dataVars[1];
-										if(is_array($dSearches) && is_array($dReplacers)){
-											if(count($dSearches) === count($dReplacers) && count($dSearches)){
-												foreach($dReplacers as $drk=>$drv){
-													$dReplacers[$drk] = (isset($rowData[$drv])) ? "$".$drv : "";
-
+										if (is_array($dSearches) && is_array($dReplacers)) {
+											if (count($dSearches) === count($dReplacers) && count($dSearches)) {
+												foreach ($dReplacers as $drk => $drv) {
+													$dReplacers[$drk] = (isset($rowData[$drv])) ? "$" . $drv : "";
 												}
 											}
 										}
@@ -99,10 +97,9 @@ class SSP {
 							}
 							$column["formatter"] = str_replace($searches, $replacers, $column["formatter"]);
 						}
-						$row[ $j ] = $column['formatter'];
-					}
-					else {
-						$row[ $j ] = $rowData[ self::$columnFields[$j] ];
+						$row[$j] = $column['formatter'];
+					} else {
+						$row[$j] = $rowData[self::$columnFields[$j]];
 					}
 				}
 			}
@@ -123,10 +120,9 @@ class SSP {
 	 *     * pass - user password
 	 *  @return resource PDO connection
 	 */
-	static function db ( $conn )
-	{
-		if ( is_array( $conn ) ) {
-			return self::sql_connect( $conn );
+	static function db($conn) {
+		if (is_array($conn)) {
+			return self::sql_connect($conn);
 		}
 		return $conn;
 	}
@@ -138,11 +134,10 @@ class SSP {
 	 *  @param  array $request Data sent to server by DataTables
 	 *  @return string SQL limit clause
 	 */
-	static function limit ( $request )
-	{
+	static function limit($request) {
 		$limit = '';
-		if ( isset($request['start']) && $request['length'] != -1 ) {
-			$limit = "LIMIT ".intval($request['start']).", ".intval($request['length']);
+		if (isset($request['start']) && $request['length'] != -1) {
+			$limit = "LIMIT " . intval($request['start']) . ", " . intval($request['length']);
 		}
 		return $limit;
 	}
@@ -155,34 +150,32 @@ class SSP {
 	 *  @param  array $columns Column information array
 	 *  @return string SQL order by clause
 	 */
-	static function order ( $request, $columns )
-	{
+	static function order($request, $columns) {
 		$order = '';
-		if ( isset($request['order']) && count($request['order']) ) {
+		if (isset($request['order']) && count($request['order'])) {
 			$orderBy = array();
-			for ( $i=0, $ien=count($request['order']) ; $i<$ien ; $i++ ) {
+			for ($i = 0, $ien = count($request['order']); $i < $ien; $i++) {
 				// Convert the column index into the column data property
 				$columnIdx = intval($request['order'][$i]['column']);
 				$requestColumn = $request['columns'][$columnIdx];
 				$orderFields = $columns[$requestColumn["data"]];
 				self::$sortFields = isset($orderFields["sorter"]) && !empty($orderFields["sorter"])
-									? $orderFields["sorter"] :
-									(isset($orderFields["filter"]) && !empty($orderFields["filter"])
-									? $orderFields["filter"] :
-									$orderFields["name"]);
+					? $orderFields["sorter"] : (isset($orderFields["filter"]) && !empty($orderFields["filter"])
+						? $orderFields["filter"] :
+						$orderFields["name"]);
 				self::$sortFields = (!is_array(self::$sortFields)) ? [self::$sortFields] : self::$sortFields;
-				if ( $requestColumn['orderable'] == 'true' ) {
+				if ($requestColumn['orderable'] == 'true') {
 					$dir = $request['order'][$i]['dir'] === 'asc' ?
-							'ASC' :
-							'DESC';
-					if(is_array(self::$sortFields)){
-						foreach(self::$sortFields as $orderField){
-							$orderBy[] = $orderField.' '.$dir;
+						'ASC' :
+						'DESC';
+					if (is_array(self::$sortFields)) {
+						foreach (self::$sortFields as $orderField) {
+							$orderBy[] = $orderField . ' ' . $dir;
 						}
 					}
 				}
 			}
-			$order = (!empty($orderBy)) ? 'ORDER BY '.implode(', ', $orderBy) : '';
+			$order = (!empty($orderBy)) ? 'ORDER BY ' . implode(', ', $orderBy) : '';
 		}
 		return $order;
 	}
@@ -199,31 +192,33 @@ class SSP {
 	 *  @param  array $columns Column information array
 	 *  @return string SQL where clause
 	 */
-	static function filter ( $request, $columns, &$bindings )
-	{
+	static function filter($request, $columns, &$bindings) {
 		$globalSearch = array();
 		$columnSearch = array();
 
-		if ( isset($request['search']) && $request['search']['value'] != '' ) {
+		if (isset($request['search']) && $request['search']['value'] != '') {
 			$str = $request['search']['value'];
-			for ( $i=0, $ien=count($request['columns']) ; $i<$ien ; $i++ ) {
+			for ($i = 0, $ien = count($request['columns']); $i < $ien; $i++) {
 				$requestColumn = $request['columns'][$i];
 				$filterFields = $columns[$requestColumn["data"]];
 				self::$sortFields = isset($filterFields["filter"]) ? $filterFields["filter"] :
-									$filterFields["name"];
+					$filterFields["name"];
 				self::$sortFields = (!is_array(self::$sortFields)) ? [self::$sortFields] : self::$sortFields;
-				if ( $requestColumn['searchable'] == 'true' ) {
-					foreach(self::$sortFields as $filterField){
-						$binding = self::bind( $bindings, "%{$str}%", PDO::PARAM_STR );
-						$globalSearch[] = $filterField." LIKE {$binding}";
+				if ($requestColumn['searchable'] == 'true') {
+					foreach (self::$sortFields as $k => $filterField) {
+						if ($k === count(self::$sortFields) - 1) {
+							$binding = self::bind($bindings, "%" . $str . "%", PDO::PARAM_STR);
+							$globalSearch[] = $filterField . " LIKE {$binding}";
+						}
 					}
 				}
 			}
 		}
-		// var_dump($globalSearch);exit();
+		// var_dump($globalSearch);
+		// exit();
 		return $globalSearch;
 
-		var_dump($globalSearch);
+		// var_dump($globalSearch);
 		// Individual column filtering
 		/*if ( isset( $request['columns'] ) ) {
 			for ( $i=0, $ien=count($request['columns']) ; $i<$ien ; $i++ ) {
@@ -251,7 +246,7 @@ class SSP {
 		if ( $where !== '' ) {
 			$where = 'WHERE '.$where;
 		}*/
-		return $where;
+		// return $where;
 	}
 
 	/**
@@ -263,46 +258,43 @@ class SSP {
 	 * 	@return	null	Makes a call direct to the calling user function
 	 * and append the returned formatted string to private variable $actionCtrls
 	 */
-	private static function prepareActionCtrls($options = [], $pk = 0)
-	{
-		if(!empty($options)){
-			foreach($options as $k=>$option){
+	private static function prepareActionCtrls($options = [], $pk = 0) {
+		if (!empty($options)) {
+			foreach ($options as $k => $option) {
 				$fnName = $option;
-				if(function_exists($fnName)){
+				if (function_exists($fnName)) {
 					self::$actionCtrls .= call_user_func($fnName, $pk);
 				}
 			}
 		}
 	}
-	private static function setFetchFields($fieldsParts)
-	{
-		if(is_array($fieldsParts)){
-			foreach($fieldsParts as $fieldItems){
-				if(isset($fieldItems["name"])){
-					if(in_array(trim($fieldItems["name"]), self::$silentFields) ){
-						if(isset($fieldItems["fields"]) && !empty($fieldItems["fields"])){
+	private static function setFetchFields($fieldsParts) {
+		if (is_array($fieldsParts)) {
+			foreach ($fieldsParts as $fieldItems) {
+				if (isset($fieldItems["name"])) {
+					if (in_array(trim($fieldItems["name"]), self::$silentFields)) {
+						if (isset($fieldItems["fields"]) && !empty($fieldItems["fields"])) {
 							$fetchF = $fieldItems["fields"];
 							self::$fetchFields[] = (is_array($fetchF)) ? implode(",", $fetchF) : $fetchF;
 						}
-					}else{
+					} else {
 						self::$fetchFields[] = trim($fieldItems["name"]);
 					}
 				}
 			}
 		}
 	}
-	private static function setColumnFields($fieldsParts)
-	{
-		if(is_array($fieldsParts)){
-			foreach($fieldsParts as $fieldItems){
-				if(isset($fieldItems["name"])){
-					if(strpos($fieldItems["name"], "AS")){
+	private static function setColumnFields($fieldsParts) {
+		if (is_array($fieldsParts)) {
+			foreach ($fieldsParts as $fieldItems) {
+				if (isset($fieldItems["name"])) {
+					if (strpos($fieldItems["name"], "AS")) {
 						$fieldItemNameParts = explode("AS", $fieldItems["name"]);
 						$fieldItemName = trim(end($fieldItemNameParts));
-					}elseif(strpos($fieldItems["name"], ".")){
+					} elseif (strpos($fieldItems["name"], ".")) {
 						$fieldItemNameParts = explode(".", $fieldItems["name"]);
 						$fieldItemName = trim(end($fieldItemNameParts));
-					}else{
+					} else {
 						$fieldItemName = trim($fieldItems["name"]);
 					}
 					self::$columnFields[] = trim($fieldItemName);
@@ -310,95 +302,118 @@ class SSP {
 			}
 		}
 	}
-	static function complex ( $request, $conn, $table = null, $primaryKey = 'id')
-	{
-		if(!isset($request["fields"])){
+	static function complex($request, $conn, $table = null, $primaryKey = 'id') {
+		if (!isset($request["fields"])) {
 			self::fatal("No fields defined to fetch");
 		}
 		$bindings = array();
-		$db = self::db( $conn );
+		$db = self::db($conn);
 		$fieldsParts = unserialize(base64_decode($request['fields']));
 		$params = isset($request["params"]) ? unserialize(base64_decode($request["params"])) : false;
 		$joinedTbls = isset($params["joinedTbls"]) ? $params["joinedTbls"] : false;
+
 		$where = isset($params["where"]) ? "WHERE {$params["where"]}" : false;
+		$whereAlways = isset($params["whereAlways"]) ? "{$params["whereAlways"]}" : false;
+
 		$groupBy = (isset($params["groupBy"]) && null != $params["groupBy"]) ? "GROUP BY {$params["groupBy"]}" : "";
-		if(null === $table){
+
+		if (null === $table) {
 			$table = isset($request["table"]) ? $request["table"] : false;
 		}
 
-		if(!$table){
+		if (!$table) {
 			self::fatal("No base tables defined");
 		}
-		if(!is_array($fieldsParts)){
+		if (!is_array($fieldsParts)) {
 			self::fatal("fields param expects an array");
-		}else{
-			foreach($fieldsParts as $fieldItem){
-				if(!isset($fieldItem["name"])) continue; //self::fatal("Each field items need a name index");
+		} else {
+			foreach ($fieldsParts as $fieldItem) {
+				if (!isset($fieldItem["name"])) continue; //self::fatal("Each field items need a name index");
 			}
 		}
 		self::setFetchFields($fieldsParts);
 		self::$fetchFields[] = $primaryKey;
 
-		if(!empty(self::$silentFields)){
-			foreach(self::$silentFields as $silentField){
-
+		if (!empty(self::$silentFields)) {
+			foreach (self::$silentFields as $silentField) {
 			}
 		}
 		self::setColumnFields($fieldsParts);
 		// Build the SQL query string from the request
-		$limit = self::limit( $request );
-		$order = self::order( $request, $fieldsParts );
-		$whereResult = self::filter( $request, $fieldsParts, $bindings );
-		$whereResult = self::_flatten( $whereResult, " OR " );
-		if ( $whereResult ) {
+		$limit = self::limit($request);
+		$order = self::order($request, $fieldsParts);
+		$whereResult = self::filter($request, $fieldsParts, $bindings);
+		$whereResult = self::_flatten($whereResult, " OR ");
+
+		if ($whereResult) {
 			$where = $where ?
-				$where .' AND '.$whereResult :
-				'WHERE '.$whereResult;
+				$where . ' AND (' . $whereResult . ')' :
+				'WHERE ' . $whereResult;
 		}
 
-		if( null !== $joinedTbls ){
+
+		/**
+		 * The where clause which is always set
+		 */
+		$whereAll = self::_flatten($whereAlways);
+		$whereAllSql = "";
+		if ($whereAll) {
+			$where = ($where != "") ?
+				$where . ' AND (' . $whereAll . ')' :
+				"WHERE {$whereAll}";
+
+			$whereAllSql = "WHERE {$whereAll}";
+		}
+
+		if (null !== $joinedTbls) {
 			$table .= " {$joinedTbls}";
 		}
-		$query = "SELECT ".implode(", ", self::$fetchFields)."
+		$query = "SELECT " . implode(", ", self::$fetchFields) . "
 		FROM {$table}
 		$where
 		$groupBy
 		$order
 		$limit";
 
-		if(isset($params["debug"]) && $params["debug"]){
+		if (isset($params["debug"]) && $params["debug"]) {
 			var_dump($query);
 			exit();
 		}
 		// Main query to actually get the data
-		$data = self::sql_exec( $db, $bindings, $query);
+		$data = self::sql_exec($db, $bindings, $query);
 
 
+		/**
+		 * Get count of filtered records
+		 */
 		$query = "SELECT COUNT({$primaryKey})
 		FROM {$table}
 		$where
 		$groupBy";
 
-		$resFilterLength = self::sql_exec( $db, $bindings, $query);
+		$resFilterLength = self::sql_exec($db, $bindings, $query);
 		$recordsFiltered = (count($resFilterLength) === 1) ? $resFilterLength[0][0] : count($resFilterLength);
 
-		// Total data set length
+		/**
+		 * Get count of total dataset
+		 */
 		$query = "SELECT COUNT({$primaryKey})
 		FROM {$table}
+		{$whereAllSql}
 		{$groupBy}";
-		$resTotalLength = self::sql_exec( $db, $bindings, $query);
+		$resTotalLength = self::sql_exec($db, [], $query);
 		$recordsTotal = (count($resTotalLength) === 1) ? $resTotalLength[0][0] : count($resTotalLength);
 
 		/*
 		 * Output
 		 */
 		return array(
-			"draw"            => isset ( $request['draw'] ) ?
-				intval( $request['draw'] ) :
+			"draw"            => isset($request['draw']) ?
+				intval($request['draw']) :
 				0,
-			"recordsTotal"    => intval( $recordsTotal ),
-			"recordsFiltered" => intval( $recordsFiltered ),
-			"data"            => self::data_output( $fieldsParts, $data, $primaryKey )
+			"recordsTotal"    => intval($recordsTotal),
+			"recordsFiltered" => intval($recordsFiltered),
+			"data"            => self::data_output($fieldsParts, $data, $primaryKey)
 		);
 	}
 	/**
@@ -412,24 +427,22 @@ class SSP {
 	 *     * pass - user password
 	 * @return resource Database connection handle
 	 */
-	static function sql_connect ( $sql_details )
-	{
+	static function sql_connect($sql_details): object {
 		try {
-			$db = @new PDO(
+			$db = new \PDO(
 				"mysql:host={$sql_details['host']};dbname={$sql_details['db']}",
 				$sql_details['user'],
 				$sql_details['pass'],
-				array( PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION )
+				array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION)
 			);
-            $db->exec("set names utf8");
-		}
-		catch (PDOException $e) {
+			$db->exec("set names utf8");
+			return $db;
+		} catch (PDOException $e) {
 			self::fatal(
-				"An error occurred while connecting to the database. ".
-				"The error reported by the server was: ".$e->getMessage()
+				"An error occurred while connecting to the database. " .
+					"The error reported by the server was: " . $e->getMessage()
 			);
 		}
-		return $db;
 	}
 	/**
 	 * Execute an SQL query on the database
@@ -441,30 +454,28 @@ class SSP {
 	 * @param  string   $sql SQL query to execute.
 	 * @return array         Result from the query (all rows)
 	 */
-	static function sql_exec ( $db, $bindings, $sql=null )
-	{
+	static function sql_exec($db, $bindings, $sql = null) {
 		// Argument shifting
-		if ( $sql === null ) {
+		if ($sql === null) {
 			$sql = $bindings;
 		}
-		$stmt = $db->prepare( $sql );
-		//echo $sql;
+		$stmt = $db->prepare($sql);
 		// Bind parameters
-		if ( is_array( $bindings ) ) {
-			for ( $i=0, $ien=count($bindings) ; $i<$ien ; $i++ ) {
+		echo $sql;
+		if (is_array($bindings)) {
+			for ($i = 0, $ien = count($bindings); $i < $ien; $i++) {
 				$binding = $bindings[$i];
-				$stmt->bindValue( $binding['key'], $binding['val'], $binding['type'] );
+				$stmt->bindValue($binding['key'], $binding['val'], $binding['type']);
 			}
 		}
 		// Execute
 		try {
 			$stmt->execute();
-		}
-		catch (PDOException $e) {
-			self::fatal( "An SQL error occurred: ".$e->getMessage() );
+		} catch (PDOException $e) {
+			self::fatal("An SQL error occurred: " . $e->getMessage());
 		}
 		// Return all
-		return $stmt->fetchAll( PDO::FETCH_BOTH );
+		return $stmt->fetchAll(PDO::FETCH_BOTH);
 	}
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Internal methods
@@ -477,11 +488,10 @@ class SSP {
 	 *
 	 * @param  string $msg Message to send to the client
 	 */
-	static function fatal ( $msg )
-	{
-		echo json_encode( array(
+	static function fatal($msg) {
+		echo json_encode(array(
 			"error" => $msg
-		) );
+		));
 		exit(0);
 	}
 	/**
@@ -494,9 +504,8 @@ class SSP {
 	 * @return string       Bound key to be used in the SQL where this parameter
 	 *   would be used.
 	 */
-	static function bind ( &$a, $val, $type )
-	{
-		$key = ':binding_'.count( $a );
+	static function bind(&$a, $val, $type) {
+		$key = ':binding_' . count($a);
 		$a[] = array(
 			'key' => $key,
 			'val' => $val,
@@ -512,10 +521,9 @@ class SSP {
 	 *  @param  string $prop Property to read
 	 *  @return array        Array of property values
 	 */
-	static function pluck ( $a, $prop )
-	{
+	static function pluck($a, $prop) {
 		$out = array();
-		for ( $i=0, $len=count($a) ; $i<$len ; $i++ ) {
+		for ($i = 0, $len = count($a); $i < $len; $i++) {
 			$out[] = $a[$i][$prop];
 		}
 		return $out;
@@ -527,13 +535,11 @@ class SSP {
 	 * @param  string $join Glue for the concatenation
 	 * @return string Joined string
 	 */
-	static function _flatten ( $a, $join = ' AND ' )
-	{
-		if ( ! $a ) {
+	static function _flatten($a, $join = ' AND ') {
+		if (!$a) {
 			return '';
-		}
-		else if ( $a && is_array($a) ) {
-			return implode( $join, $a );
+		} else if ($a && is_array($a)) {
+			return implode($join, $a);
 		}
 		return $a;
 	}
