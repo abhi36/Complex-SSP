@@ -306,7 +306,7 @@ class SSP {
 		if (!isset($request["fields"])) {
 			self::fatal("No fields defined to fetch");
 		}
-		$bindings = array();
+		$bindings = [];
 		$db = self::db($conn);
 		$fieldsParts = unserialize(base64_decode($request['fields']));
 		$params = isset($request["params"]) ? unserialize(base64_decode($request["params"])) : false;
@@ -461,7 +461,7 @@ class SSP {
 		}
 		$stmt = $db->prepare($sql);
 		// Bind parameters
-		echo $sql;
+		// echo $sql;
 		if (is_array($bindings)) {
 			for ($i = 0, $ien = count($bindings); $i < $ien; $i++) {
 				$binding = $bindings[$i];
