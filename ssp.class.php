@@ -2,7 +2,7 @@
 /*
  * Helper functions for building a DataTables server-side processing (SSP) SQL query
  *
- * Author: Abhijeet K
+ * Author: Abhijeet K (https://abhijeetkarmakar.com)
  *
  * @license: GNU v3.0
  */
@@ -12,7 +12,7 @@ class SSP {
 	private static $fetchFields = [];
 	private static $columnFields = [];
 	private static $actionCtrls = "";
-	private static $silentFields = ["silence", "actions"];
+	private static $silentFields = ["silence", "actions", "operations"];
 	/**
 	 * Create the data output array for the DataTables rows
 	 *
@@ -25,9 +25,9 @@ class SSP {
 	 * the callback function gets precedence
 	 */
 	static function data_output($columns, $data, $primaryKey) {
-		$out = array();
+		$out = [];
 		for ($i = 0, $ien = count($data); $i < $ien; $i++) {
-			$row = array();
+			$row = [];
 			for ($j = 0, $jen = count($columns) - 1; $j < $jen; $j++) {
 				$column = $columns[$j];
 				$fieldItemNameParts = explode(".", $primaryKey);
@@ -44,8 +44,8 @@ class SSP {
 						$pk
 					]);
 				}
-				// Skip special case of actions
-				if ($column["name"] == "actions") {
+				// Skip special case of actions/operaitons
+				if ($column["name"] == "actions" || $column["name"] == "operations") {
 					self::$actionCtrls = "";
 					if (isset($column["options"]) && is_array($column["options"])) {
 						self::prepareActionCtrls($column["options"], $data[$i][$pk]);
@@ -55,9 +55,10 @@ class SSP {
 					extract($data[$i]);
 
 					// If there a formatter is provided
-					if (isset($column['formatter'])) {
+					if (isset($column['formatter']) || isset($column['formatters'])) {
+						$formatter = isset($column["formatter"]) ? $column["formatter"] : (isset($column["formatters"]) ? $column["formatters"] : "");
 						// Construct formatted response with simple string replacement
-						preg_match_all("/{{(\w+)}}/", $column["formatter"], $vars);
+						preg_match_all("/{{(\w+)}}/", $formatter, $vars);
 						if (count($vars) === 2) {
 							$searches = $vars[0];
 							$replacers = $vars[1];
@@ -70,10 +71,10 @@ class SSP {
 									}
 								}
 							}
-							$column["formatter"] = str_replace($searches, $replacers, $column["formatter"]);
+							$formatter = str_replace($searches, $replacers, $formatter);
 						}
 						// Construct formatted response with expression replacement
-						preg_match_all("/{\[(.*?)\]}/", $column["formatter"], $vars);
+						preg_match_all("/{\[(.*?)\]}/", $formatter, $vars);
 						if (count($vars) === 2) {
 							$searches = $vars[0];
 							$replacers = $vars[1];
@@ -95,9 +96,9 @@ class SSP {
 									}
 								}
 							}
-							$column["formatter"] = str_replace($searches, $replacers, $column["formatter"]);
+							$formatter = str_replace($searches, $replacers, $formatter);
 						}
-						$row[$j] = $column['formatter'];
+						$row[$j] = $formatter;
 					} else {
 						$row[$j] = $rowData[self::$columnFields[$j]];
 					}
@@ -200,9 +201,9 @@ class SSP {
 			$str = $request['search']['value'];
 			for ($i = 0, $ien = count($request['columns']); $i < $ien; $i++) {
 				$requestColumn = $request['columns'][$i];
-				$filterFields = $columns[$requestColumn["data"]];
-				self::$sortFields = isset($filterFields["filter"]) ? $filterFields["filter"] :
-					$filterFields["name"];
+				$filterFields = isset($columns[$requestColumn["data"]]) ? $columns[$requestColumn["data"]] : [];
+				self::$sortFields = (!empty($filterFields)) ? (isset($filterFields["filter"]) ? $filterFields["filter"] :
+					$filterFields["name"]) : [];
 				self::$sortFields = (!is_array(self::$sortFields)) ? [self::$sortFields] : self::$sortFields;
 				if ($requestColumn['searchable'] == 'true') {
 					foreach (self::$sortFields as $k => $filterField) {
@@ -308,8 +309,8 @@ class SSP {
 		}
 		$bindings = [];
 		$db = self::db($conn);
-		$fieldsParts = unserialize(base64_decode($request['fields']));
-		$params = isset($request["params"]) ? unserialize(base64_decode($request["params"])) : false;
+		$fieldsParts = json_decode(base64_decode($request['fields']), true);
+		$params = isset($request["params"]) ? json_decode(base64_decode($request["params"]), true) : false;
 		$joinedTbls = isset($params["joinedTbls"]) ? $params["joinedTbls"] : false;
 
 		$where = isset($params["where"]) ? "WHERE {$params["where"]}" : false;
